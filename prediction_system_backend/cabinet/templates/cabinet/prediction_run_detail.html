@@ -1,0 +1,121 @@
+{% extends 'cabinet/main.html' %}
+
+{% load static %}
+{% load user_tags %}
+
+{% block title %}
+    Прогноз {{ prediction_run.id }}
+{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'css/cabinet.css' %}">
+    <link rel="stylesheet" href="{% static 'css/prediction_run_detail.css' %}">
+{% endblock %}
+
+{% block links %}
+    <a href="{% url 'cabinet' %}" class="action-btn primary">
+        Прогнозы
+    </a>
+{% endblock %}
+
+{% block table_data %}
+    <div class="container">
+        <div class="info-card">
+            <div class="header">
+                <h2>Запуск прогнозирования #{{ prediction_run.id }}</h2>
+                <p class="subtitle">
+                    Дата запуска: {{ prediction_run.created_at }}
+                </p>
+            </div>
+            <div class="info-grid">
+                <div>
+                    <span class="label">Статус:</span>
+                    <span class="value">{{ prediction_run.get_status_display }}</span>
+                </div>
+                <div>
+                    <span class="label">Время окклюзии:</span>
+                    <span class="value">{{ prediction_run.occlusion_time }} мин.</span>
+                </div>
+                <div>
+                    <span class="label">Вероятность:</span>
+                    <span class="value">
+                        {% if prediction_run.summary_probability is not None %}
+                            {{ prediction_run.formatted_summary_probability }}%
+                        {% else %}
+                            —
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+            <div class="info-grid">
+                <div>
+                    <span class="label">Медкарта</span>
+                    <span class="value">
+                        <a id="medcard-link" href="{% url 'medical_card_update' prediction_run.medical_card.id %}">
+                            {{ prediction_run.medical_card }}
+                        </a>
+                    </span>
+                </div>
+                <div>
+                    <span class="label">Анестезиолог:</span>
+                    <span class="value">{{ prediction_run.anesthesist }}</span>
+                </div>
+                <div>
+                    <span class="label">Тип стентирования:</span>
+                    <span class="value">
+                        {% if prediction_run.stenting_type %}
+                            {{ prediction_run.stenting_type }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="table-card">
+            <h2>Результаты прогнозов</h2>
+
+            {% if predictions %}
+                <table class="prediction-table">
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Вероятность</th>
+                        <th>Тип стентирования</th>
+                        <th>Группа осложнений</th>
+                        <th>Время создания</th>
+                        {% if user|has_group:"admin_group,ml_engineer_group" %}
+                            <th>Модель машинного обучения</th>
+                        {% endif %}
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for prediction in predictions %}
+                        <tr>
+                            <td>{{ prediction.id }}</td>
+                            <td>{{ prediction.probability }}</td>
+                            <td>{{ prediction.stenting_type }}</td>
+                            <td>
+                                {% if prediction.complication_group %}
+                                    {{ prediction.complication_group }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            <td>{{ prediction.created_at }}</td>
+                            {% if user|has_group:"admin_group,ml_engineer_group" %}
+                                <td>{{ prediction.ml_model }}</td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="empty">Нет данных для отображения</p>
+            {% endif %}
+        </div>
+
+    </div>
+{% endblock %}

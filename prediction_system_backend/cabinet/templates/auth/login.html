@@ -1,0 +1,38 @@
+{% extends 'root.html' %}
+{% load static %}
+
+{% block title %}
+    Авторизация
+{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{% static 'css/login.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="login-wrapper">
+    <div class="login-card">
+        <h2 class="login-title">Вход</h2>
+
+        <form method="post" class="login-form">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label>Логин</label>
+                {{ form.username }}
+            </div>
+
+            <div class="form-group">
+                <label>Пароль</label>
+                {{ form.password }}
+            </div>
+
+            <button type="submit" class="login-btn">Войти</button>
+        </form>
+    </div>
+</section>
+{% endblock %}
+
+{% block js %}
+<script src="{% static 'js/login.js' %}"></script>
+{% endblock %}

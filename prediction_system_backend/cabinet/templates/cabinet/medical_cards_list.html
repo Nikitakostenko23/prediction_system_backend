@@ -1,0 +1,82 @@
+{% extends 'cabinet/main.html' %}
+{% load static %}
+
+{% block links %}
+    <a href="{% url 'cabinet' %}" class="action-btn primary">
+        Прогнозы
+    </a>
+    <a href="{% url 'medical_card_new' %}" class="action-btn primary">
+        Новая медкарта
+    </a>
+{% endblock %}
+
+{% block table_data %}
+    <section class="table-block">
+        <h2 class="block-title">Медицинские карты</h2>
+        {% if medical_cards %}
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                    <tr>
+                        <th>ФИО</th>
+                        <th>Дата рождения</th>
+                        <th>Пол</th>
+                        <th>Стеноз ВСА</th>
+                        <th>Контралатеральная ВСА</th>
+                        <th>Кальциноз</th>
+                        <th>ХСН</th>
+                        <th>NYHA</th>
+                        <th>СД</th>
+                        <th>Действия</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for card in medical_cards %}
+                        <tr>
+                            <td>
+                                {{ card.last_name }} {{ card.first_name }} {{ card.middle_name }}
+                            </td>
+                            <td>{{ card.birthday }}</td>
+                            <td>{{ card.get_gender_display }}</td>
+                            <td>{{ card.get_degree_of_stenosis_of_the_internal_carotid_artery_display }}</td>
+                            <td>{{ card.get_stenosis_degree_of_the_contralateral_internal_carotid_artery_display }}</td>
+                            <td>{{ card.get_calcinosis_display }}</td>
+                            <td>{{ card.get_chronic_heart_failure_display }}</td>
+                            <td>{{ card.get_functional_class_nyha_display }}</td>
+                            <td>
+                                {% if card.has_diabetes %}
+                                    Да
+                                {% else %}
+                                    Нет
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'medical_card_update' card.pk %}" class="action-link">Открыть</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if is_paginated %}
+                <div class="pagination">
+                    {% if page_obj.has_previous %}
+                        <a href="?page=1">«</a>
+                        <a href="?page={{ page_obj.previous_page_number }}">‹</a>
+                    {% endif %}
+                    <span class="current-page">
+                            Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
+                        </span>
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}">›</a>
+                        <a href="?page={{ page_obj.paginator.num_pages }}">»</a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="empty-state">
+                <p>Медицинские карты не найдены</p>
+            </div>
+        {% endif %}
+    </section>
+{% endblock %}

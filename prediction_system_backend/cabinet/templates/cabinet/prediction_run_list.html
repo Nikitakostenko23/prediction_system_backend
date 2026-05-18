@@ -1,0 +1,201 @@
+{% extends 'cabinet/main.html' %}
+{% load static %}
+{% load user_tags %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'css/cabinet.css' %}">
+    <link rel="stylesheet" href="{% static 'css/prediction_run_list.css' %}">
+{% endblock %}
+
+{% block links %}
+    <a href="{% url 'medical_card_list' %}" class="action-btn primary">
+        Медкарты
+    </a>
+    {% if user|has_group:"admin_group,surgeon_group,ml_engineer_group" %}
+        <a href="{% url 'prediction_new' %}" class="action-btn primary">
+            Новый прогноз
+        </a>
+    {% endif %}
+{% endblock %}
+
+{% block table_data %}
+<section class="table-block">
+    <h3 class="block-title">История прогнозов</h3>
+
+    <div class="filter-wrapper">
+        <form action="" method="get">
+
+            <div class="filter-field">
+                <label for="status">Статус</label>
+                <select name="status" id="status">
+                    <option value="">Все</option>
+
+                    {% for value, label in available_statuses.items %}
+                        <option
+                            value="{{ value }}"
+                            {% if request.GET.status == value %}selected{% endif %}
+                        >
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-field">
+                <label for="stenting_type_id">Тип стентирования</label>
+                <select name="stenting_type_id" id="stenting_type_id">
+                    <option value="">Все</option>
+
+                    {% for id, name in stenting_types.items %}
+                        <option
+                            value="{{ id }}"
+                            {% if request.GET.stenting_type_id == id|stringformat:"s" %}selected{% endif %}
+                        >
+                            {{ name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-field">
+                <label for="date_start">Дата начала</label>
+                <input
+                    type="date"
+                    name="date_start"
+                    id="date_start"
+                    value="{{ request.GET.date_start }}"
+                >
+            </div>
+
+            <div class="filter-field">
+                <label for="date_end">Дата окончания</label>
+                <input
+                    type="date"
+                    name="date_end"
+                    id="date_end"
+                    value="{{ request.GET.date_end }}"
+                >
+            </div>
+
+            <div class="filter-actions">
+                <input type="submit" value="Применить">
+
+                <a
+                    href="{% url 'cabinet' %}"
+                    class="reset-filters-btn"
+                >
+                    Сбросить
+                </a>
+            </div>
+
+        </form>
+    </div>
+
+    {% if predictions %}
+        <div class="table-wrapper">
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Время создания</th>
+                    <th>Медкарта</th>
+                    <th>Анестезиолог</th>
+                    <th>Тип стентирования</th>
+                    <th>Окклюзия</th>
+                    <th>Вероятность</th>
+                    <th>Статус</th>
+                    <th></th>
+                </tr>
+                </thead>
+
+                <tbody>
+                {% for prediction in predictions %}
+                    <tr data-id="{{ prediction.id }}">
+                        <td>
+                            <a href="{% url 'prediction_detail' prediction.pk %}">
+                                {{ prediction.id }}
+                            </a>
+                        </td>
+
+                        <td>{{ prediction.created_at|date:"d.m.Y H:i" }}</td>
+                        <td>{{ prediction.medical_card|default:"—" }}</td>
+                        <td>{{ prediction.anesthesist }}</td>
+                        <td>{{ prediction.stenting_type|default:"—" }}</td>
+                        <td>{{ prediction.occlusion_time|default:"—" }}</td>
+
+                        <td>
+                            {% if prediction.summary_probability is not None %}
+                                {{ prediction.formatted_summary_probability }}%
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            <span class="status-badge status-{{ prediction.status }}">
+                                {{ prediction.get_status_display }}
+                            </span>
+                        </td>
+
+                        <td class="actions">
+                            {% if prediction.status == '9_canceled' or prediction.status == '7_failed' %}
+                                <button class="delete-btn">Удалить</button>
+                            {% elif prediction.status == '1_pending' or prediction.status == '2_in_progress' %}
+                                <button class="cancel-btn">Отменить</button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+{% if is_paginated %}
+<div class="pagination">
+    <ul class="pagination-list">
+
+        {% if page_obj.has_previous %}
+            <li>
+                <a href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">
+                    ←
+                </a>
+            </li>
+        {% else %}
+            <li class="disabled"><span>←</span></li>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+                <li class="active"><span>{{ num }}</span></li>
+
+            {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+                <li>
+                    <a href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ num }}">
+                        {{ num }}
+                    </a>
+                </li>
+            {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+            <li>
+                <a href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">
+                    →
+                </a>
+            </li>
+        {% else %}
+            <li class="disabled"><span>→</span></li>
+        {% endif %}
+
+    </ul>
+</div>
+{% endif %}
+    {% else %}
+        <p class="empty-text">Прогнозов пока нет</p>
+    {% endif %}
+</section>
+{% endblock %}
+
+{% block js %}
+    <script src="{% static 'js/prediction_run_list.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,154 @@
+{% extends 'root.html' %}
+{% load static %}
+{% load user_tags %}
+
+{% block title %}
+    Новая медкарта
+{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'css/medical_card_create_or_update.css' %}">
+{% endblock %}
+
+{% block content %}
+    <section class="create-wrapper">
+        <div class="create-container">
+            {% if medical_card and user|has_group:"admin_group,surgeon_group,ml_engineer_group" %}
+                <div class="form-head">
+                    <h2 class="create-title">Медицинская карта</h2>
+                    <form action="{% url 'medical_card_delete' medical_card.pk %}" id="delete-medical-card-form"
+                          method="post">
+                        {% csrf_token %}
+                        <input type="submit" class="btn-primary" id="remove-medical-card" value="Удалить"/>
+                    </form>
+                </div>
+            {% else %}
+                <h2 class="create-title">Создание медицинской карты</h2>
+            {% endif %}
+            {% if form.errors %}
+                <div class="form-errors">
+                    <p class="error-title">Ошибка при сохранении формы:</p>
+                    <ul>
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                                <li>{{ field }} {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+            <form
+                    method="post"
+                    class="create-form"
+                    action="{% if medical_card %}{% url 'medical_card_update' medical_card.pk %}{% else %}{% endif %}"
+            >
+                {% csrf_token %}
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Фамилия</label>
+                        {{ form.last_name }}
+                    </div>
+                    <div class="form-group">
+                        <label>Имя</label>
+                        {{ form.first_name }}
+                    </div>
+                    <div class="form-group">
+                        <label>Отчество</label>
+                        {{ form.middle_name }}
+                    </div>
+                    <div class="form-group">
+                        <label>Дата рождения</label>
+                        {{ form.birthday }}
+                    </div>
+                    <div class="form-group">
+                        <label>Пол</label>
+                        {{ form.gender }}
+                    </div>
+                    <div class="form-group">
+                        <label>Стеноз ВСА (%)</label>
+                        {{ form.degree_of_stenosis_of_the_internal_carotid_artery }}
+                    </div>
+                    <div class="form-group">
+                        <label>Контралатеральная ВСА (%)</label>
+                        {{ form.stenosis_degree_of_the_contralateral_internal_carotid_artery }}
+                    </div>
+                    <div class="form-group">
+                        <label>Кальциноз</label>
+                        {{ form.calcinosis }}
+                    </div>
+                    <div class="form-group">
+                        <label>Стенокардия ФК</label>
+                        {{ form.angina_pectoris_fc }}
+                    </div>
+                    <div class="form-group">
+                        <label>Извитость ВСА</label>
+                        {{ form.abnormal_tortuosity_internal_carotid_artery }}
+                    </div>
+                    <div class="form-group">
+                        <label>ХСН</label>
+                        {{ form.chronic_heart_failure }}
+                    </div>
+                    <div class="form-group">
+                        <label>NYHA</label>
+                        {{ form.functional_class_nyha }}
+                    </div>
+                    <div class="form-group">
+                        <label>Хроническая ЦВН</label>
+                        {{ form.chronic_cerebrovascular_insufficiency }}
+                    </div>
+                    <div class="form-group">
+                        <label>ХОБЛ</label>
+                        {{ form.chronic_obstructive_pulmonary_disease }}
+                    </div>
+                    <div class="form-group">
+                        <label>Онкоанамнез</label>
+                        {{ form.history_of_oncological_cancer }}
+                    </div>
+                </div>
+                <div class="checkbox-container">
+                    <div class="checkbox">
+                        <label>
+                            {{ form.symptoms_of_internal_carotid_artery_stenosis }}
+                            Симптомность стеноза
+                        </label>
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            {{ form.has_previous_myocardial_infraction }}
+                            Инфаркт миокарда
+                        </label>
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            {{ form.has_heart_rhythm_disturbances }}
+                            Нарушения ритма
+                        </label>
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            {{ form.has_diabetes }}
+                            Сахарный диабет
+                        </label>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    {% if medical_card and user|has_group:"admin_group,surgeon_group,ml_engineer_group" %}
+                        <a href="{% url 'prediction_new' %}?medical_card_id={{ medical_card.pk }}" class="btn-primary" id="prediction-run-link">
+                            Открыть прогнозирование
+                        </a>
+                        <input type="submit" class="btn-primary" value="Обновить медицинскую карту"/>
+                    {% elif user|has_group:"admin_group,surgeon_group,ml_engineer_group" %}
+                        <input type="submit" class="btn-primary" value="Создать медицинскую карту"/>
+                    {% endif %}
+                    <a onclick="history.back()" class="btn-secondary">
+                        Назад
+                    </a>
+                </div>
+            </form>
+        </div>
+    </section>
+{% endblock %}
+
+{% block js %}
+    <script src="{% static 'js/medical_card_create_or_update.js' %}"></script>
+{% endblock %}

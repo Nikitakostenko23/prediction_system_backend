@@ -1,0 +1,130 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DJANGO_SETTINGS_MODULE=prediction_system_backend.settings
+    working_dir: /home/django/prediction_system_backend
+    command: >
+      sh -c "
+      poetry run python prediction_system_backend/manage.py migrate &&
+      poetry run python prediction_system_backend/manage.py runserver 0.0.0.0:8010
+      "
+    volumes:
+      - ./:/home/django/prediction_system_backend
+    ports:
+      - "8010:8010"
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+      - celery-beat
+      - celery-worker
+    networks:
+      - prediction_system_network
+
+  postgres:
+    image: postgres:14
+    volumes:
+      - postgres_data:/var/lib/postgresql@14/data
+      - ./sql_dump:/docker-entrypoint-initdb.d
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-1234}
+      - POSTGRES_DB=${POSTGRES_DB:-prediction}
+    networks:
+      - prediction_system_network
+
+  redis:
+    image: redis:7
+    container_name: prediction_redis_cache
+    restart: always
+    networks:
+      - prediction_system_network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: prediction_rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER:-guest}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS:-guest}
+    networks:
+      - prediction_system_network
+
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /app/prediction_system_backend
+    command: celery -A prediction_system_backend.celery worker
+    volumes:
+      - ./:/app
+    depends_on:
+      - postgres
+      - rabbitmq
+      - celery-beat
+    networks:
+      - prediction_system_network
+
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /app/prediction_system_backend
+    command: celery -A prediction_system_backend.celery beat --loglevel=info
+    volumes:
+      - ./:/app
+    env_file:
+      - ./prediction_system_backend/prediction_system_backend/.env
+    depends_on:
+      - postgres
+      - rabbitmq
+      - flower
+    networks:
+      - prediction_system_network
+  
+  flower:
+    image: mher/flower
+    environment:
+      - CELERY_BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER:-guest}@rabbitmq//
+      - FLOWER_PORT=${FLOWER_PORT:-5555}
+    ports:
+      - "5555:5555"
+    depends_on:
+      - rabbitmq
+    networks:
+      - prediction_system_network
+
+  ml_service:
+    build:
+      context: ./ml_service
+      dockerfile: Dockerfile
+    command: poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8011
+    working_dir: /home/ml_service
+    volumes:
+      - ./ml_service:/home/ml_service
+    ports:
+      - "8011:8011"
+    depends_on:
+      - backend
+      - celery-worker
+      - celery-beat
+    networks:
+      - prediction_system_network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+
+networks:
+  prediction_system_network:
+    external: true

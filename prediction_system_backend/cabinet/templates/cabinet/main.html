@@ -1,0 +1,32 @@
+{% extends 'root.html' %}
+{% load static %}
+{% load user_tags %}
+
+{% block title %}
+    Личный кабинет
+{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'css/cabinet.css' %}">
+{% endblock %}
+
+{% block content %}
+    <section class="cabinet-wrapper">
+        <div class="cabinet-container">
+            <div class="cabinet-header">
+                <h2 class="cabinet-title">Личный кабинет</h2>
+            </div>
+            <div class="cabinet-actions">
+                {% if user|has_group:"admin_group,ml_engineer_group" %}
+                    <a href="{% url 'admin:index' %}" class="action-btn secondary">
+                        Админ-панель
+                    </a>
+                {% endif %}
+                {% block links %}
+                {% endblock %}
+            </div>
+            {% block table_data %}
+            {% endblock %}
+        </div>
+    </section>
+{% endblock %}

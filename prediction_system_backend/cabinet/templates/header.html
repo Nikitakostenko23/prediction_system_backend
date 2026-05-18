@@ -1,0 +1,42 @@
+<header class="main-header">
+    <div class="header-container">
+
+        <div class="header-left">
+            <h1 class="logo">Вектор ВСА - Система прогнозирования</h1>
+        </div>
+
+        <div class="header-right">
+            {% if user.is_authenticated %}
+                <span class="user-name">
+                    {{ user.last_name }} {{ user.first_name }} {{ user.middle_name }}
+                </span>
+
+                <span class="user-role">
+                    {% for group in user.groups.all %}
+                        {% if group.name == 'surgeon_group' %}
+                            Хирург
+                        {% elif group.name == 'anesthetist_group' %}
+                            Анестезиолог
+                        {% elif group.name == 'admin_group' %}
+                            Админ
+                        {% elif group.name == 'ml_engineer_group' %}
+                            ML-инженер
+                        {% endif %}
+
+                        {% if not forloop.last %}
+                            |
+                        {% endif %}
+                    {% endfor %}
+                </span>
+
+                <form method="post" action="{% url 'logout' %}" onsubmit="confirmLogout(event)">
+                    {% csrf_token %}
+                    <button type="submit" class="logout-btn">
+                        Выйти
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+
+    </div>
+</header>

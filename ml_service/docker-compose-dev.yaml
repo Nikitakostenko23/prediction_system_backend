@@ -1,0 +1,17 @@
+# нужен для отладки ml_service отдельно от основного бекенда
+services:
+  ml_service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8071
+    volumes:
+      - ./:/home/ml_service
+    ports:
+      - "8071:8071"
+    networks:
+      - prediction_system_network
+
+networks:
+  prediction_system_network:
+    external: true
