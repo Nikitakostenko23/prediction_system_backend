@@ -106,7 +106,7 @@ ML‑микросервис (папка `ml_service`) написан на FastAP
 
 Исходный набор данных предоставлен медицинской организацией и **не может быть опубликован** 
 в открытом доступе по соображениям конфиденциальности. 
-В репозитории [model_training_for_prediction_service]
+В репозитории [model_training_for_prediction_service](https://github.com/Nikitakostenko23/model_training_for_prediction_service)
 представлены демонстрационные результаты экспериментов без раскрытия самих данных.
 
 ## Методы машинного обучения
